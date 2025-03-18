@@ -1,0 +1,28 @@
+# Node modules
+/node_modules
+
+# Prisma
+/prisma/.env
+/prisma/migrations
+
+# .env file for sensitive data
+.env
+
+# Log files
+*.log
+
+# Optional: Editor files (e.g., VS Code)
+.vscode/
+
+# Optional: Coverage reports (for Jest)
+coverage/
+
+# Optional: build or dist directories if you're using them for production builds
+/build
+/dist
+
+# MacOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
