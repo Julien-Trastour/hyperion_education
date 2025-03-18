@@ -29,3 +29,40 @@ model PasswordResetToken {
   token     String   @unique
   createdAt DateTime @default(now())
 }
+
+model Cycle {
+  id         String  @id @default(uuid())
+  cycleName  String  @unique
+  classes    Class[]
+}
+
+model Class {
+  id         String  @id @default(uuid())
+  className  String  @unique
+  cycle      Cycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycleId    String
+  subjects   Subject[]
+}
+
+model Subject {
+  id          String    @id @default(uuid())
+  subjectName String
+  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId     String
+  categories  Category[]
+}
+
+model Category {
+  id            String  @id @default(uuid())
+  categoryName  String
+  subject       Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId     String
+  themes       Theme[]
+}
+
+model Theme {
+  id          String  @id @default(uuid())
+  themeName   String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+}

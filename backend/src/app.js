@@ -4,19 +4,27 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js";
+import cycleRoutes from "./routes/cycleRoutes.js";
+import subjectRoutes from "./routes/subjectRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import themeRoutes from "./routes/themeRoutes.js";
 
 dotenv.config();
 
 const app = express();
 
 // 🔹 Middleware de sécurité et logs
-app.use(helmet()); // Protège contre les attaques courantes
-app.use(cors()); // Active CORS pour permettre les requêtes cross-origin
-app.use(express.json()); // Permet de lire le JSON dans les requêtes
-app.use(morgan("dev")); // Affiche les requêtes HTTP dans la console (utile en dev)
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(morgan("dev"));
 
 // 🔹 Routes API
 app.use("/api/auth", authRoutes);
+app.use("/api", cycleRoutes);
+app.use("/api", subjectRoutes);
+app.use("/api", categoryRoutes);
+app.use("/api", themeRoutes);
 
 // 🔹 Page d'accueil de l'API
 app.get("/", (req, res) => {

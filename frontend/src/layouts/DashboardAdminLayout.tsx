@@ -28,9 +28,9 @@ export default function DashboardAdminLayout() {
             <Users size={20} />
             Utilisateurs
           </Link>
-          <Link to="/admin/cours" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
+          <Link to="/admin/manage-courses" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
             <BookOpen size={20} />
-            Gérer les cours
+            Gestion des cours
           </Link>
           <button className="flex w-full items-center gap-3 px-6 py-3 text-red-600 hover:bg-red-100" onClick={handleLogout}>
             <LogOut size={20} />

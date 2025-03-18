@@ -3,7 +3,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ResetPassword from "./pages/auth/ResetPassword";
 import ResetPasswordForm from "./pages/auth/ResetPasswordForm";
-import DashboardAdminLayout from "./layouts/DashboardAdminLayout";
+import AdminRoutes from "./routes/AdminRoutes";
 import DashboardStudentLayout from "./layouts/DashboardStudentLayout";
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
         <Route path="/reset-password/confirm" element={<ResetPasswordForm />} />
 
         {/* Dashboard Admin */}
-        <Route path="/admin/*" element={<DashboardAdminLayout />} />
+        <Route path="/admin/*" element={<AdminRoutes />} />
 
         {/* Dashboard Élève */}
         <Route path="/eleve/*" element={<DashboardStudentLayout />} />
