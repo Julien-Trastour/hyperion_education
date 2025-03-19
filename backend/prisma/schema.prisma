@@ -17,9 +17,24 @@ model User {
   classLevel        String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  role              String   @default("eleve")
-  
+  role              Role      @default(ELEVE)
+  status            UserStatus @default(ACTIF)
+  profilePicture    String?
+
   passwordResetToken PasswordResetToken?
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  RESPONSABLE_PEDAGOGIQUE
+  ELEVE
+}
+
+enum UserStatus {
+  ACTIF
+  SUSPENDU
+  DESACTIVE
 }
 
 model PasswordResetToken {

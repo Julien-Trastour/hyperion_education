@@ -15,25 +15,33 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-  
+
     try {
       const response = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.error || "Échec de la connexion");
       }
-  
-      // ✅ Utilisation de `setAuthData` pour stocker le JWT et l'utilisateur
+
+      // ✅ Stocker les données d'authentification
       setAuthData(data.token, data.user.role, data.user);
-  
-      // 🔀 Redirection selon le rôle
-      navigate(data.user.role === "admin" ? "/admin" : "/eleve");
+
+      // 🔀 Redirection selon le rôle utilisateur
+      if (
+        data.user.role === "SUPER_ADMIN" || 
+        data.user.role === "ADMIN" || 
+        data.user.role === "RESPONSABLE_PEDAGOGIQUE"
+      ) {
+        navigate("/admin"); // ✅ Tous ces rôles accèdent à "/admin"
+      } else {
+        navigate("/eleve");
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {

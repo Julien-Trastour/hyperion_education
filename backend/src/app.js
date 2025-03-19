@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import cycleRoutes from "./routes/cycleRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
@@ -21,6 +22,7 @@ app.use(morgan("dev"));
 
 // 🔹 Routes API
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api", cycleRoutes);
 app.use("/api", subjectRoutes);
 app.use("/api", categoryRoutes);

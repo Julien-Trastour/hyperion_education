@@ -1,11 +1,17 @@
 import { Link, Outlet, useNavigate } from "react-router";
 import { LogOut, LayoutDashboard, Users, BookOpen } from "lucide-react";
-import { clearAuthData } from "../utils/auth";
+import { clearAuthData, getUserRole } from "../utils/auth";
 import { useAuthGuard } from "../hooks/useAuthGuard";
 
 export default function DashboardAdminLayout() {
   const navigate = useNavigate();
-  useAuthGuard("admin");
+  
+  // ✅ Autoriser SUPER_ADMIN, ADMIN et RESPONSABLE_PEDAGOGIQUE
+  useAuthGuard(["SUPER_ADMIN", "ADMIN", "RESPONSABLE_PEDAGOGIQUE"]);
+
+  // 🔹 Récupérer le rôle de l'utilisateur
+  const userRole = getUserRole();
+  const isAdminOrSuperAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
 
   const handleLogout = () => {
     clearAuthData();
@@ -24,14 +30,23 @@ export default function DashboardAdminLayout() {
             <LayoutDashboard size={20} />
             Dashboard
           </Link>
-          <Link to="/admin/utilisateurs" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
-            <Users size={20} />
-            Utilisateurs
-          </Link>
-          <Link to="/admin/manage-courses" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
-            <BookOpen size={20} />
-            Gestion des cours
-          </Link>
+
+          {/* 🔹 Gestion des utilisateurs (réservé à SUPER_ADMIN & ADMIN) */}
+          {isAdminOrSuperAdmin && (
+            <Link to="/admin/manage-users" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
+              <Users size={20} />
+              Gestion des utilisateurs
+            </Link>
+          )}
+
+          {/* 🔹 Gestion des cours (réservé à SUPER_ADMIN & ADMIN) */}
+          {isAdminOrSuperAdmin && (
+            <Link to="/admin/manage-courses" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
+              <BookOpen size={20} />
+              Gestion des cours
+            </Link>
+          )}
+
           <button className="flex w-full items-center gap-3 px-6 py-3 text-red-600 hover:bg-red-100" onClick={handleLogout}>
             <LogOut size={20} />
             Déconnexion
