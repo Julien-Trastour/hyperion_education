@@ -120,7 +120,7 @@ export const fetchCyclesAtom = atom(null, async (_, set) => {
     } catch (error) {
       console.error("❌ Erreur lors de la modification de la matière :", error);
     }
-  });  
+  });
   
   export const editCategoryAtom = atom(null, async (get, set, categoryId: string, newName: string) => {
     try {
@@ -201,7 +201,7 @@ export const fetchCyclesAtom = atom(null, async (_, set) => {
   export const deleteThemeAtom = atom(null, async (get, set, themeId: string) => {
     try {
       const selectedCategory = get(selectedCategoryAtom);
-  
+      
       if (!selectedCategory) {
         console.warn("❌ Impossible de supprimer le thème : aucune catégorie sélectionnée.");
         return;
@@ -212,10 +212,11 @@ export const fetchCyclesAtom = atom(null, async (_, set) => {
       set(themesAtom, (prev) => ({
         ...prev,
         [selectedCategory]: prev[selectedCategory]?.filter(
-          (theme: Theme) => theme.id !== themeId
+          (theme) => theme.id !== themeId
         ) || [],
       }));
     } catch (error) {
       console.error("❌ Erreur lors de la suppression du thème :", error);
     }
-  });   
+  });
+  

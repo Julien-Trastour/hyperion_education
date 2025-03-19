@@ -1,14 +1,15 @@
 export interface User {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    birthDate?: string;
-    classLevel?: string;
-    role: "SUPER_ADMIN" | "ADMIN" | "RESPONSABLE_PEDAGOGIQUE" | "ELEVE";
-    status: "ACTIF" | "SUSPENDU" | "DESACTIVE";
-    profilePicture?: string;
-    createdAt: string;
-  }
-  
-  
+  id: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  classLevel?: string;
+  codePin?: string;
+  role: "ELEVE" | "RESPONSABLE_PEDAGOGIQUE" | "ADMIN" | "SUPER_ADMIN";
+  status: "ACTIF" | "SUSPENDU" | "DESACTIVE";
+  profilePicture?: string;
+  createdAt: string;
+  updatedAt: string;
+}

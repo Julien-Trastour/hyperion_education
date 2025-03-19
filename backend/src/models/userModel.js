@@ -92,18 +92,36 @@ export const updateUserStatus = async (id, newStatus, requestingUserRole) => {
 };
 
 // 🔹 Fonction pour générer un token de réinitialisation de mot de passe
-export const generatePasswordResetToken = async (userId) => {
-  const token = uuidv4();
+export async function generatePasswordResetToken(userId) {
+  try {
+    // ✅ Vérifie s'il existe déjà un token pour cet utilisateur
+    const existingToken = await prisma.passwordResetToken.findUnique({
+      where: { userId },
+    });
 
-  await prisma.passwordResetToken.create({
-    data: {
-      userId,
-      token,
-    },
-  });
+    if (existingToken) {
+      // ✅ Si un token existe déjà, le supprime
+      await prisma.passwordResetToken.delete({
+        where: { userId },
+      });
+    }
 
-  return token;
-};
+    // ✅ Crée un nouveau token
+    const token = uuidv4();
+    await prisma.passwordResetToken.create({
+      data: {
+        userId,
+        token,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 30),
+      },
+    });
+
+    return token;
+  } catch (error) {
+    console.error("❌ Erreur lors de la génération du token :", error);
+    throw new Error("Impossible de générer le token de réinitialisation.");
+  }
+}
 
 // 🔹 Fonction pour supprimer un utilisateur par email (sécurisé)
 export const deleteUserByEmail = async (email, requestingUserRole) => {

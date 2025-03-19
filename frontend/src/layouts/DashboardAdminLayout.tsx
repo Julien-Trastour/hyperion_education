@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router";
-import { LogOut, LayoutDashboard, Users, BookOpen } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, BookOpen, Settings, Map } from "lucide-react";
 import { clearAuthData, getUserRole } from "../utils/auth";
 import { useAuthGuard } from "../hooks/useAuthGuard";
 
@@ -47,6 +47,21 @@ export default function DashboardAdminLayout() {
             </Link>
           )}
 
+          {/* 🔹 Gestion des parcours (réservé à SUPER_ADMIN & ADMIN) */}
+          {isAdminOrSuperAdmin && (
+            <Link to="/admin/manage-pathways" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
+              <Map size={20} />
+              Gestion des parcours
+            </Link>
+          )}
+
+          {/* 🔹 Paramètres (accessible à tous les admins) */}
+          <Link to="/admin/settings" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
+            <Settings size={20} />
+            Paramètres
+          </Link>
+
+          {/* 🔹 Déconnexion */}
           <button className="flex w-full items-center gap-3 px-6 py-3 text-red-600 hover:bg-red-100" onClick={handleLogout}>
             <LogOut size={20} />
             Déconnexion

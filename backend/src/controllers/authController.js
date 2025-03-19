@@ -71,15 +71,18 @@ export const requestPasswordReset = async (req, res) => {
 
     const user = await findUserByEmail(email);
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
 
+    // ✅ On ne supprime plus le token ici (c'est géré dans le model)
     const resetToken = await generatePasswordResetToken(user.id);
+
+    // ✅ Envoi de l'email
     await sendResetEmail(email, resetToken);
 
-    return res.status(200).json({ message: 'E-mail de réinitialisation envoyé. Veuillez vérifier votre boîte de réception.' });
+    return res.status(200).json({ message: "E-mail de réinitialisation envoyé. Veuillez vérifier votre boîte de réception." });
   } catch (error) {
-    console.error('Erreur lors de la demande de réinitialisation du mot de passe:', error);
-    return res.status(500).json({ error: 'Erreur interne du serveur' });
+    console.error("Erreur lors de la demande de réinitialisation du mot de passe:", error);
+    return res.status(500).json({ error: "Erreur interne du serveur" });
   }
 };

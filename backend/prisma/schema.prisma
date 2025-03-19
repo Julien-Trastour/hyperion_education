@@ -8,18 +8,19 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  password          String
-  firstName         String
-  lastName          String
-  birthDate         DateTime
-  classLevel        String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  role              Role      @default(ELEVE)
-  status            UserStatus @default(ACTIF)
-  profilePicture    String?
+  id             String     @id @default(uuid())
+  email          String     @unique
+  password       String
+  firstName      String
+  lastName       String
+  birthDate      DateTime
+  classLevel     String?
+  codePin        String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  role           Role       @default(ELEVE)
+  status         UserStatus @default(ACTIF)
+  profilePicture String?
 
   passwordResetToken PasswordResetToken?
 }
@@ -39,45 +40,90 @@ enum UserStatus {
 
 model PasswordResetToken {
   id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String   @unique
   token     String   @unique
   createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Cycle {
-  id         String  @id @default(uuid())
-  cycleName  String  @unique
-  classes    Class[]
+  id        String  @id @default(uuid())
+  cycleName String  @unique
+  classes   Class[]
 }
 
 model Class {
-  id         String  @id @default(uuid())
-  className  String  @unique
-  cycle      Cycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  cycleId    String
-  subjects   Subject[]
+  id        String    @id @default(uuid())
+  className String    @unique
+  cycle     Cycle     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycleId   String
+  subjects  Subject[]
 }
 
 model Subject {
-  id          String    @id @default(uuid())
+  id          String     @id @default(uuid())
   subjectName String
-  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  class       Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId     String
   categories  Category[]
 }
 
 model Category {
-  id            String  @id @default(uuid())
-  categoryName  String
-  subject       Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId     String
+  id           String  @id @default(uuid())
+  categoryName String
+  subject      Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId    String
   themes       Theme[]
 }
 
 model Theme {
+  id         String    @id @default(uuid())
+  themeName  String
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  pathways   Pathway[]
+}
+
+model Pathway {
   id          String  @id @default(uuid())
-  themeName   String
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  categoryId  String
+  title       String
+  description String?
+  theme       Theme   @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  themeId     String
+  order       Int
+
+  finalTestId String?   @unique
+  finalTest   Exercise? @relation(fields: [finalTestId], references: [id], onDelete: SetNull)
+
+  lessons          Lesson[]
+  pathwayExercises PathwayExercise[]
+}
+
+model Lesson {
+  id        String  @id @default(uuid())
+  title     String
+  content   String
+  order     Int
+  pathway   Pathway @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  pathwayId String
+}
+
+model Exercise {
+  id      String @id @default(uuid())
+  title   String
+  content String
+
+  pathwayExercises PathwayExercise[]
+  Pathway          Pathway?
+}
+
+model PathwayExercise {
+  id         String   @id @default(uuid())
+  pathway    Pathway  @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  pathwayId  String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exerciseId String
+  order      Int
 }

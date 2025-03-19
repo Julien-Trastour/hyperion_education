@@ -9,6 +9,7 @@ import cycleRoutes from "./routes/cycleRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import themeRoutes from "./routes/themeRoutes.js";
+import pathwayRoutes from "./routes/pathwayRoutes.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use("/api", cycleRoutes);
 app.use("/api", subjectRoutes);
 app.use("/api", categoryRoutes);
 app.use("/api", themeRoutes);
+app.use("/api/pathways", pathwayRoutes);
 
 // 🔹 Page d'accueil de l'API
 app.get("/", (req, res) => {
