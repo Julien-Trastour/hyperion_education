@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, RefreshCw } from "lucide-react";
+import { resetPassword } from "../../services/authService";
 
 export default function ResetPasswordForm() {
   const [searchParams] = useSearchParams();
@@ -14,11 +15,23 @@ export default function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!token) {
+      setError("Le lien de réinitialisation est invalide ou expiré.");
+    }
+  }, [token]);
+
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
     setIsLoading(true);
+
+    if (!token) {
+      setError("Le lien de réinitialisation est invalide.");
+      setIsLoading(false);
+      return;
+    }
 
     if (newPassword !== confirmPassword) {
       setIsLoading(false);
@@ -26,22 +39,11 @@ export default function ResetPasswordForm() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/reset-password", { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Impossible de réinitialiser le mot de passe.");
-      }
-
-      setMessage("Mot de passe réinitialisé avec succès ! Redirection en cours...");
+      const responseMessage = await resetPassword(token, newPassword);
+      setMessage(responseMessage);
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
-      setError((err as Error).message);
+      setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue.");
     } finally {
       setIsLoading(false);
     }

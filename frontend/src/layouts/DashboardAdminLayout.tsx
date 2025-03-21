@@ -1,20 +1,25 @@
-import { Link, Outlet, useNavigate } from "react-router";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { LogOut, LayoutDashboard, Users, BookOpen, Settings, Map } from "lucide-react";
-import { clearAuthData, getUserRole } from "../utils/auth";
+import { useAtom } from "jotai";
+import { authAtom } from "../store/authAtom";
 import { useAuthGuard } from "../hooks/useAuthGuard";
+import { logout } from "../services/authService";
 
 export default function DashboardAdminLayout() {
+  const [, setAuth] = useAtom(authAtom);
   const navigate = useNavigate();
-  
+
   // ✅ Autoriser SUPER_ADMIN, ADMIN et RESPONSABLE_PEDAGOGIQUE
   useAuthGuard(["SUPER_ADMIN", "ADMIN", "RESPONSABLE_PEDAGOGIQUE"]);
 
-  // 🔹 Récupérer le rôle de l'utilisateur
-  const userRole = getUserRole();
+  // 🔹 Récupérer le rôle de l'utilisateur depuis `authAtom`
+  const [auth] = useAtom(authAtom);
+  const userRole = auth.role;
   const isAdminOrSuperAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
 
   const handleLogout = () => {
-    clearAuthData();
+    logout();
+    setAuth({ token: null, role: null, user: null });
     navigate("/login");
   };
 
@@ -56,7 +61,7 @@ export default function DashboardAdminLayout() {
           )}
 
           {/* 🔹 Paramètres (accessible à tous les admins) */}
-          <Link to="/admin/settings" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
+          <Link to="/admin/account-settings" className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-200">
             <Settings size={20} />
             Paramètres
           </Link>

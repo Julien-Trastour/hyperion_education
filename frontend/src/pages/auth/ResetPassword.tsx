@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mail, Send } from "lucide-react";
+import { requestPasswordReset } from "../../services/authService";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
@@ -14,21 +15,10 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/request-password-reset", { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur lors de la réinitialisation");
-      }
-
-      setMessage("Un email de réinitialisation a été envoyé !");
+      const responseMessage = await requestPasswordReset(email);
+      setMessage(responseMessage);
     } catch (err) {
-      setError((err as Error).message);
+      setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue.");
     } finally {
       setIsLoading(false);
     }

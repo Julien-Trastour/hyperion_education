@@ -6,21 +6,19 @@ const SECRET_KEY = process.env.JWT_SECRET;
 
 // Middleware pour vérifier si l'utilisateur est authentifié
 export const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'Accès refusé. Aucun token fourni.' });
+    return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
   }
 
-  // Vérifier le token avec la clé secrète
   jwt.verify(token, SECRET_KEY, (err, user) => {
     if (err) {
-      return res.status(403).json({ error: 'Token invalide.' });
+      return res.status(403).json({ error: "Token invalide." });
     }
 
-    // Ajouter l'utilisateur décodé au request pour utilisation dans les autres middlewares ou routes
-    req.user = user;
+    req.user = { id: user.userId, email: user.email, role: user.role };
     next();
   });
 };

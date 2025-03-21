@@ -127,3 +127,10 @@ model PathwayExercise {
   exerciseId String
   order      Int
 }
+
+
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "../../doc/architecture/bdd_schema.svg"
+  format   = "svg"
+}

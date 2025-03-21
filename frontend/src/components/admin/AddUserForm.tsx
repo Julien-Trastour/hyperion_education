@@ -1,13 +1,22 @@
-import { useState } from "react";
-import { User } from "../../types/users";
+import { useState, useEffect } from "react";
+import { useAtom } from "jotai";
+import { addUserAtom, classLevelsAtom, fetchClassesAtom } from "../../store/usersStore";
 
 interface Props {
-  addUser: (newUser: Omit<User, "id" | "createdAt"> & { password: string }) => void;
   setIsAddingUser: (value: boolean) => void;
 }
 
-export default function AddUserForm({ addUser, setIsAddingUser }: Props) {
-  const [newUser, setNewUser] = useState<Omit<User, "id" | "createdAt"> & { password: string }>({
+export default function AddUserForm({ setIsAddingUser }: Props) {
+  const [, addUser] = useAtom(addUserAtom);
+  const [classLevels] = useAtom(classLevelsAtom);
+  const [, fetchClasses] = useAtom(fetchClassesAtom);
+
+  // ✅ Charger les classes au montage du composant
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  const [newUser, setNewUser] = useState({
     firstName: "",
     lastName: "",
     email: "",
@@ -16,6 +25,7 @@ export default function AddUserForm({ addUser, setIsAddingUser }: Props) {
     role: "ELEVE",
     status: "ACTIF",
     profilePicture: "",
+    classLevel: "",
   });
 
   const handleAddUser = async () => {
@@ -23,6 +33,13 @@ export default function AddUserForm({ addUser, setIsAddingUser }: Props) {
       alert("❌ Veuillez remplir tous les champs obligatoires.");
       return;
     }
+
+    // ✅ Vérifier que la classe est renseignée si l'utilisateur est un élève
+    if (newUser.role === "ELEVE" && !newUser.classLevel) {
+      alert("❌ Veuillez sélectionner la classe de l'élève.");
+      return;
+    }
+
     try {
       await addUser(newUser);
       setIsAddingUser(false);
@@ -34,7 +51,7 @@ export default function AddUserForm({ addUser, setIsAddingUser }: Props) {
   return (
     <div className="flex flex-col gap-4 bg-gray-100 p-4 rounded-lg shadow-md">
       <h2 className="text-lg font-semibold text-gray-700">Nouvel utilisateur</h2>
-      
+
       {/* 🔹 Formulaire d'ajout */}
       <div className="grid grid-cols-2 gap-4">
         <input
@@ -79,7 +96,7 @@ export default function AddUserForm({ addUser, setIsAddingUser }: Props) {
         />
         <select
           value={newUser.role}
-          onChange={(e) => setNewUser({ ...newUser, role: e.target.value as User["role"] })}
+          onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
           className="border rounded px-3 py-2 w-full"
         >
           <option value="ELEVE">Élève</option>
@@ -88,6 +105,26 @@ export default function AddUserForm({ addUser, setIsAddingUser }: Props) {
           <option value="SUPER_ADMIN" disabled>Super Admin</option>
         </select>
       </div>
+
+      {/* 🔹 Sélection "Classe" pour les élèves */}
+      {newUser.role === "ELEVE" && (
+        <div>
+          <label className="text-gray-700 font-medium">Classe de l'élève</label>
+          <select
+            value={newUser.classLevel}
+            onChange={(e) => setNewUser({ ...newUser, classLevel: e.target.value })}
+            className="border rounded px-3 py-2 w-full"
+            required
+          >
+            <option value="">Sélectionner une classe</option>
+            {classLevels.map((classe) => (
+              <option key={classe} value={classe}>
+                {classe}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* 🔹 Boutons */}
       <div className="mt-4 flex justify-end gap-3">

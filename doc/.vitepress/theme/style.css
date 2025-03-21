@@ -1,0 +1,39 @@
+details {
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 1em;
+    margin-bottom: 1em;
+    background-color: #1e1e1e;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  details[open] {
+    box-shadow: 0 0 0 1px #3b82f6;
+  }
+  
+  details > summary {
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #3b82f6;
+  }
+  
+  details > summary:hover {
+    color: #60a5fa;
+  }
+  
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  
+  details > summary::before {
+    content: "▶ ";
+    display: inline-block;
+    transform: rotate(0deg);
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  details[open] > summary::before {
+    content: "▼ ";
+  }
+  

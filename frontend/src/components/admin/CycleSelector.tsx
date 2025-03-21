@@ -1,8 +1,7 @@
 import React from "react";
-import { Cycle } from "../../types/courses";
 
 interface Props {
-  cycles: Cycle[];
+  cycles: { id: string; cycleName: string }[];
   selectedCycle: string | null;
   setSelectedCycle: (cycleId: string) => void;
 }

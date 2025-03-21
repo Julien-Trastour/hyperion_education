@@ -1,15 +1,15 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
-import { getUserRole } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
+import { useAtom } from "jotai";
+import { authAtom } from "../store/authAtom";
 
 export const useAuthGuard = (allowedRoles: string[]) => {
   const navigate = useNavigate();
+  const [auth] = useAtom(authAtom);
 
   useEffect(() => {
-    const role = getUserRole();
-
-    if (!role || !allowedRoles.includes(role)) {
+    if (!auth.token || !allowedRoles.includes(auth.role || "")) {
       navigate("/login");
     }
-  }, [navigate, allowedRoles]);
+  }, [auth.role, auth.token, allowedRoles, navigate]);
 };

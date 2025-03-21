@@ -1,4 +1,3 @@
-import React from "react";
 import { Class } from "../../types/courses";
 
 interface Props {
@@ -7,26 +6,25 @@ interface Props {
   setSelectedClass: (classId: string) => void;
 }
 
-const ClassSelector: React.FC<Props> = ({ classes, selectedClass, setSelectedClass }) => {
+export default function ClassSelector({ classes, selectedClass, setSelectedClass }: Props) {
   return (
-    <div className="mb-6 bg-gray-50 border border-gray-300 rounded-lg p-6 flex flex-col gap-4">
-      <h2 className="text-xl font-semibold text-gray-700 border-l-4 border-green-500 pl-3">Classes</h2>
-
+    <div className="bg-white p-4 rounded shadow">
+      <h2 className="text-lg font-semibold text-gray-800 mb-2">Choisir une classe</h2>
       <div className="flex flex-wrap gap-3">
-        {classes.map((cls) => (
+        {classes.map((classe) => (
           <button
-            key={cls.id}
-            className={`px-4 py-2 rounded-lg transition-all cursor-pointer text-sm font-medium ${
-              selectedClass === cls.id ? "bg-green-600 text-white shadow-md" : "bg-gray-200 hover:bg-gray-300"
+            key={classe.id}
+            onClick={() => setSelectedClass(classe.id)}
+            className={`px-4 py-2 rounded ${
+              selectedClass === classe.id
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
             }`}
-            onClick={() => setSelectedClass(cls.id)}
           >
-            {cls.className}
+            {classe.className}
           </button>
         ))}
       </div>
     </div>
   );
-};
-
-export default ClassSelector;
+}

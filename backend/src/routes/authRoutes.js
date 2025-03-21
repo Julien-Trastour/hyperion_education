@@ -1,26 +1,19 @@
-import express from 'express';
-import { authenticateToken, isAdmin } from '../middlewares/authMiddleware.js';
-import { register, login, requestPasswordReset } from '../controllers/authController.js';
+import express from "express";
+import { register, login } from "../controllers/authController.js";
+import { requestPasswordReset, resetPassword } from "../controllers/passwordResetController.js";
 
 const router = express.Router();
 
-// 🔹 Route pour l'inscription (ouverte à tous)
-router.post('/register', register);
+// 🔹 Inscription
+router.post("/register", register);
 
-// 🔹 Route pour la connexion (ouverte à tous)
-router.post('/login', login);
+// 🔹 Connexion
+router.post("/login", login);
 
-// 🔹 Route pour la demande de réinitialisation de mot de passe (ouverte à tous)
-router.post('/request-password-reset', requestPasswordReset);
+// 🔹 Demande de réinitialisation de mot de passe
+router.post("/request-password-reset", requestPasswordReset);
 
-// 🔹 Route protégée nécessitant une authentification pour accéder au profil de l'utilisateur connecté
-router.get('/profile', authenticateToken, (req, res) => {
-  res.status(200).json({ message: "Profil de l'utilisateur", user: req.user });
-});
-
-// 🔹 Route protégée nécessitant un administrateur pour accéder à l'espace admin
-router.get('/admin', authenticateToken, isAdmin, (req, res) => {
-  res.status(200).json({ message: 'Accès administrateur autorisé.' });
-});
+// 🔹 Réinitialisation du mot de passe avec un token
+router.post("/reset-password", resetPassword);
 
 export default router;

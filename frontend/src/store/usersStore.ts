@@ -1,212 +1,215 @@
 import { atom } from "jotai";
-import {
-  createUser,
-  getUsers,
-  updateUser,
-  updateUserRole,
-  updateUserStatus,
-  deleteUserById,
-  updateUserProfile,
-  changePassword,
-} from "../api/users";
-import { User } from "../types/users";
-import { getUserData } from "../utils/auth";
 
-// 🔹 Vérification stricte du typage d'un `User`
-function isValidUser(obj: any): obj is User {
-  return obj && typeof obj === "object" && "id" in obj && typeof obj.id === "string";
-}
-
-/* ===========================
-   🔹 Gestion des Utilisateurs (Admin)
-   =========================== */
-
-// 🔹 Stockage des utilisateurs
+// ✅ Atom pour stocker les utilisateurs
 export const usersAtom = atom<User[]>([]);
 
-// 🔹 Filtres des utilisateurs
-export const roleFilterAtom = atom<User["role"][]>([]);
-export const statusFilterAtom = atom<User["status"][]>([]);
+// ✅ Atom pour stocker le nombre total d'élèves et d'employés
+export const studentCountAtom = atom((get) => get(usersAtom).filter((user) => user.role === "ELEVE").length);
+export const employeeCountAtom = atom((get) => get(usersAtom).filter((user) => user.role !== "ELEVE").length);
+
+// ✅ Atom pour les filtres (Rôle, Statut, Classe)
+export const roleFilterAtom = atom<string[]>([]);
+export const statusFilterAtom = atom<string[]>([]);
 export const classFilterAtom = atom<string[]>([]);
+export const classLevelsAtom = atom<string[]>([]);
 
-// 🔹 Fonctions pour modifier les filtres
-export const toggleRoleFilterAtom = atom(null, (get, set, role: User["role"]) => {
-  const currentFilters = get(roleFilterAtom);
-  set(roleFilterAtom, currentFilters.includes(role) ? currentFilters.filter((r) => r !== role) : [...currentFilters, role]);
-});
+// ✅ Atom pour récupérer les utilisateurs depuis l'API
+export const fetchUsersAtom = atom(
+  null,
+  async (_, set) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await fetch("/api/users", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-export const toggleStatusFilterAtom = atom(null, (get, set, status: User["status"]) => {
-  const currentFilters = get(statusFilterAtom);
-  set(statusFilterAtom, currentFilters.includes(status) ? currentFilters.filter((s) => s !== status) : [...currentFilters, status]);
-});
+      if (!response.ok) throw new Error("Impossible de récupérer les utilisateurs.");
 
-export const toggleClassFilterAtom = atom(null, (get, set, classLevel: string) => {
-  const currentFilters = get(classFilterAtom);
-  set(classFilterAtom, currentFilters.includes(classLevel) ? currentFilters.filter((c) => c !== classLevel) : [...currentFilters, classLevel]);
-});
-
-// 🔹 Récupérer la liste des utilisateurs (Admin)
-export const fetchUsersAtom = atom(null, async (_, set) => {
-  try {
-    const users = await getUsers();
-    const validUsers = users.filter(isValidUser);
-    set(usersAtom, validUsers);
-  } catch (error) {
-    console.error("❌ Erreur lors de la récupération des utilisateurs :", error);
-  }
-});
-
-// 🔹 Ajouter un utilisateur
-export const addUserAtom = atom(null, async (_, set, newUser: Omit<User, "id" | "createdAt"> & { password: string }) => {
-  try {
-    const response = await createUser(newUser);
-    if (!response || !("user" in response) || !isValidUser(response.user)) {
-      throw new Error("Données utilisateur invalides");
+      const data = await response.json();
+      set(usersAtom, data);
+    } catch (error) {
+      console.error("❌ Erreur lors de la récupération des utilisateurs :", error);
     }
-
-    const createdUser = response.user as User;
-
-    set(usersAtom, (prev: User[]) => [...prev, createdUser]);
-
-    console.log(`✅ Utilisateur ajouté avec succès: ${createdUser.id}`);
-  } catch (error) {
-    console.error("❌ Erreur lors de l'ajout de l'utilisateur :", error);
-  }
-});
-
-// 🔹 Modifier un utilisateur
-export const editUserAtom = atom(null, async (_, set, userUpdate: Partial<User> & { id: string }) => {
-  try {
-    const response = await updateUser(userUpdate.id, userUpdate);
-    if (!response || !("user" in response) || !isValidUser(response.user)) {
-      throw new Error("Données utilisateur invalides");
-    }
-
-    const updatedUser = response.user as User;
-
-    set(usersAtom, (prev: User[]) =>
-      prev.map((user) => (user.id === userUpdate.id ? updatedUser : user))
-    );
-
-    console.log(`✅ Utilisateur mis à jour avec succès: ${updatedUser.id}`);
-  } catch (error) {
-    console.error("❌ Erreur lors de la modification de l'utilisateur :", error);
-  }
-});
-
-// 🔹 Modifier le rôle d'un utilisateur (Admin)
-export const updateUserRoleAtom = atom(null, async (_, set, { id, newRole }: { id: string; newRole: User["role"] }) => {
-  try {
-    const updatedUser = await updateUserRole(id, newRole);
-    if (!isValidUser(updatedUser)) throw new Error("Données utilisateur invalides");
-
-    set(usersAtom, (prev) =>
-      prev.map((user) => (user.id === id ? { ...user, role: newRole } : user))
-    );
-
-    console.log(`✅ Rôle mis à jour pour l'utilisateur ID: ${id}`);
-  } catch (error) {
-    console.error("❌ Erreur lors de la modification du rôle :", error);
-    alert("❌ Impossible de modifier le rôle.");
-  }
-});
-
-// 🔹 Modifier le statut d'un utilisateur (Admin)
-export const updateUserStatusAtom = atom(null, async (_, set, { id, newStatus }: { id: string; newStatus: User["status"] }) => {
-  try {
-    const updatedUser = await updateUserStatus(id, newStatus);
-    if (!isValidUser(updatedUser)) throw new Error("Données utilisateur invalides");
-
-    set(usersAtom, (prev) =>
-      prev.map((user) => (user.id === id ? { ...user, status: newStatus } : user))
-    );
-
-    console.log(`✅ Statut mis à jour pour l'utilisateur ID: ${id}`);
-  } catch (error) {
-    console.error("❌ Erreur lors de la modification du statut :", error);
-    alert("❌ Impossible de modifier le statut.");
-  }
-});
-
-// 🔹 Supprimer un utilisateur (Admin)
-export const deleteUserAtom = atom(null, async (_, set, userId: string) => {
-  try {
-    if (!window.confirm("❗ Voulez-vous vraiment supprimer cet utilisateur ?")) return;
-
-    await deleteUserById(userId);
-    set(usersAtom, (prev) => prev.filter((user) => user.id !== userId));
-    alert("✅ L'utilisateur a bien été supprimé.");
-  } catch (error) {
-    console.error("❌ Erreur lors de la suppression de l'utilisateur :", error);
-  }
-});
-
-// 🔹 Réinitialiser le mot de passe (Admin)
-export const resetPasswordAtom = atom(null, async (_, __, userEmail: string) => {
-  try {
-    const response = await fetch("http://localhost:5000/api/auth/request-password-reset", { 
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: userEmail }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Erreur lors de la réinitialisation.");
-    }
-
-    alert(`📧 Un email de réinitialisation a été envoyé à ${userEmail}`);
-    console.log(`✅ Email de réinitialisation envoyé à ${userEmail}`);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "❌ Une erreur est survenue. Vérifiez l'email et réessayez.";
-    console.error("❌ Erreur lors de la demande de réinitialisation :", errorMessage);
-    alert(errorMessage);
-  }
-});
-
-/* ===========================
-   🔹 Gestion du compte utilisateur (Admin & Étudiant)
-   =========================== */
-
-// 🔹 Initialisation avec les données stockées dans localStorage
-const storedUser = getUserData();
-
-// ✅ `WritableAtom` : Permet de lire ET modifier `currentUserAtom`
-export const currentUserAtom = atom<User | null, [User], void>(
-  storedUser,
-  (_, set, newUser) => {
-    // ✅ Met à jour `localStorage` ET l'état Jotai
-    localStorage.setItem("user", JSON.stringify(newUser));
-    set(currentUserAtom, newUser);
   }
 );
 
-// 🔹 Atom pour mettre à jour le profil utilisateur
-export const updateUserProfileAtom = atom(null, async (get, set, updatedData: Partial<User>) => {
-  try {
-    const currentUser = get(currentUserAtom);
-    if (!currentUser) throw new Error("Utilisateur non connecté");
+// ✅ Atom pour ajouter un utilisateur
+export const addUserAtom = atom(
+  null,
+  async (get, set, newUser: Omit<User, "id"> & { password: string }) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newUser),
+      });
 
-    const updatedUser = await updateUserProfile(updatedData);
+      if (!response.ok) throw new Error("Impossible d'ajouter l'utilisateur.");
 
-    // ✅ Mise à jour de `currentUserAtom` et `localStorage`
-    set(currentUserAtom, { ...currentUser, ...updatedUser });
-
-    alert("✅ Profil mis à jour avec succès !");
-  } catch (error) {
-    console.error("❌ Erreur lors de la mise à jour du profil :", error);
-    alert("❌ Impossible de mettre à jour le profil.");
+      const createdUser = await response.json();
+      set(usersAtom, [...get(usersAtom), createdUser]);
+    } catch (error) {
+      console.error("❌ Erreur ajout utilisateur :", error);
+    }
   }
-});
+);
 
-// 🔹 Atom pour changer le mot de passe de l'utilisateur
-export const changePasswordAtom = atom(null, async (_, __, { oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
-  try {
-    await changePassword(oldPassword, newPassword);
-    alert("✅ Mot de passe mis à jour avec succès !");
-  } catch (error) {
-    console.error("❌ Erreur lors du changement de mot de passe :", error);
-    alert("❌ Une erreur est survenue lors du changement de mot de passe.");
+// ✅ Atom pour éditer un utilisateur
+export const editUserAtom = atom(
+  null,
+  async (get, set, updatedUser: { id: string; role?: string; status?: string; classLevel?: string }) => {
+    try {
+      const token = sessionStorage.getItem("token");
+
+      // ✅ Trouver l'utilisateur existant
+      const existingUser = get(usersAtom).find((user) => user.id === updatedUser.id);
+      if (!existingUser) throw new Error("Utilisateur non trouvé.");
+
+      // ✅ Création d'un objet complet
+      const completeUser = {
+        id: updatedUser.id,
+        firstName: existingUser.firstName,
+        lastName: existingUser.lastName,
+        email: existingUser.email,
+        role: updatedUser.role || existingUser.role,
+        status: updatedUser.status || existingUser.status,
+        classLevel: updatedUser.classLevel ?? existingUser.classLevel,
+      };
+
+      const response = await fetch(`/api/users/${updatedUser.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(completeUser),
+      });
+
+      if (!response.ok) throw new Error("Impossible de modifier l'utilisateur.");
+
+      const updatedData = await response.json();
+      set(usersAtom, (users) =>
+        users.map((user) => (user.id === updatedUser.id ? updatedData.user : user))
+      );
+    } catch (error) {
+      console.error("❌ Erreur modification utilisateur :", error);
+    }
   }
-});
+);
+
+// ✅ Atom pour supprimer un utilisateur
+export const deleteUserAtom = atom(
+  null,
+  async (_, set, userId: string) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) throw new Error("Impossible de supprimer l'utilisateur.");
+
+      // ✅ Retirer l'utilisateur supprimé de la liste
+      set(usersAtom, (prevUsers) => prevUsers.filter((user) => user.id !== userId));
+    } catch (error) {
+      console.error("❌ Erreur suppression utilisateur :", error);
+    }
+  }
+);
+
+// ✅ Atom pour réinitialiser le mot de passe d'un utilisateur
+export const resetPasswordAtom = atom(
+  null,
+  async (_, __, email: string) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await fetch("/api/users/reset-password", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) throw new Error("Impossible de réinitialiser le mot de passe.");
+    } catch (error) {
+      console.error("❌ Erreur réinitialisation mot de passe :", error);
+    }
+  }
+);
+
+// ✅ Atom pour récupérer les classes depuis l'API
+export const fetchClassesAtom = atom(
+  null,
+  async (_, set) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await fetch("/api/pathways/classes", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) throw new Error("Impossible de récupérer les classes.");
+
+      const data = await response.json();
+      if (Array.isArray(data)) set(classLevelsAtom, data);
+    } catch (error) {
+      console.error("❌ Erreur récupération classes :", error);
+    }
+  }
+);
+
+// ✅ Atoms pour activer/désactiver les filtres
+export const toggleRoleFilterAtom = atom(
+  null,
+  (get, set, role: string) => {
+    const currentFilters = get(roleFilterAtom);
+    set(roleFilterAtom, currentFilters.includes(role) ? currentFilters.filter((r) => r !== role) : [...currentFilters, role]);
+  }
+);
+
+export const toggleStatusFilterAtom = atom(
+  null,
+  (get, set, status: string) => {
+    const currentFilters = get(statusFilterAtom);
+    set(statusFilterAtom, currentFilters.includes(status) ? currentFilters.filter((s) => s !== status) : [...currentFilters, status]);
+  }
+);
+
+export const toggleClassFilterAtom = atom(
+  null,
+  (get, set, classLevel: string) => {
+    const currentFilters = get(classFilterAtom);
+    set(classFilterAtom, currentFilters.includes(classLevel) ? currentFilters.filter((c) => c !== classLevel) : [...currentFilters, classLevel]);
+  }
+);
+
+// ✅ Type User pour TypeScript
+export type User = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  status: string;
+  birthDate?: string;
+  profilePicture?: string;
+  classLevel?: string | null;
+  createdAt?: string;
+};

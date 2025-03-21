@@ -5,10 +5,6 @@ import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import cycleRoutes from "./routes/cycleRoutes.js";
-import subjectRoutes from "./routes/subjectRoutes.js";
-import categoryRoutes from "./routes/categoryRoutes.js";
-import themeRoutes from "./routes/themeRoutes.js";
 import pathwayRoutes from "./routes/pathwayRoutes.js";
 
 dotenv.config();
@@ -21,13 +17,9 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-// 🔹 Routes API
+// 🔹 Routes API essentielles
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api", cycleRoutes);
-app.use("/api", subjectRoutes);
-app.use("/api", categoryRoutes);
-app.use("/api", themeRoutes);
 app.use("/api/pathways", pathwayRoutes);
 
 // 🔹 Page d'accueil de l'API

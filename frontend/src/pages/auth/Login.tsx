@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn } from "lucide-react";
-import { setAuthData } from "../../utils/auth";
+import { useAtom } from "jotai";
+import { login } from "../../services/authService";
+import { authAtom } from "../../store/authAtom";
 
 export default function Login() {
+  const [, setAuth] = useAtom(authAtom);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,33 +20,17 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await login(email, password);
 
-      const data = await response.json();
+      setAuth({ token: data.token, role: data.user.role, user: data.user });
 
-      if (!response.ok) {
-        throw new Error(data.error || "Échec de la connexion");
-      }
-
-      // ✅ Stocker les données d'authentification
-      setAuthData(data.token, data.user.role, data.user);
-
-      // 🔀 Redirection selon le rôle utilisateur
-      if (
-        data.user.role === "SUPER_ADMIN" || 
-        data.user.role === "ADMIN" || 
-        data.user.role === "RESPONSABLE_PEDAGOGIQUE"
-      ) {
-        navigate("/admin"); // ✅ Tous ces rôles accèdent à "/admin"
-      } else {
-        navigate("/eleve");
-      }
+      navigate(
+        ["SUPER_ADMIN", "ADMIN", "RESPONSABLE_PEDAGOGIQUE"].includes(data.user.role)
+          ? "/admin"
+          : "/student"
+      );
     } catch (err) {
-      setError((err as Error).message);
+      setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
     } finally {
       setIsLoading(false);
     }

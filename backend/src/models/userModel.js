@@ -1,112 +1,116 @@
-import prisma from "../db.js"; // Connexion à la base de données via Prisma
-import argon2 from "argon2"; // Pour hacher les mots de passe
-import { v4 as uuidv4 } from "uuid"; // Pour générer un token unique
+import prisma from "../db.js";
+import argon2 from "argon2";
+import { v4 as uuidv4 } from "uuid";
 
-// 🔹 Fonction pour créer un utilisateur (évite les doublons)
-export const createUser = async (email, password, firstName, lastName, birthDate, classLevel, role, profilePicture) => {
+// 🔹 Créer un utilisateur (évite les doublons)
+export const createUser = async (email, password, firstName, lastName, birthDate, role, classLevel = null) => {
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
   if (existingUser) {
     throw new Error("Cet email est déjà utilisé.");
   }
 
+  // ✅ Vérifier si birthDate est défini et valide
+  let formattedBirthDate = null;
+  if (birthDate) {
+    const parsedDate = new Date(birthDate);
+    if (!isNaN(parsedDate)) {
+      formattedBirthDate = parsedDate;
+    } else {
+      throw new Error("La date de naissance fournie est invalide.");
+    }
+  }
+
   const hashedPassword = await argon2.hash(password);
-  const newUser = await prisma.user.create({
+  return await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
       firstName,
       lastName,
-      birthDate: new Date(birthDate),
-      classLevel,
+      birthDate: formattedBirthDate,
       role: role || "ELEVE",
       status: "ACTIF",
-      profilePicture,
+      classLevel: role === "ELEVE" ? classLevel : null,
     },
   });
-  return newUser;
 };
 
-// 🔹 Fonction pour retrouver un utilisateur par email
+
+// 🔹 Trouver un utilisateur par email
 export const findUserByEmail = async (email) => {
   return await prisma.user.findUnique({ where: { email } });
 };
 
-// 🔹 Fonction pour retrouver un utilisateur par ID
+// 🔹 Trouver un utilisateur par ID
 export const findUserById = async (id) => {
-  return await prisma.user.findUnique({ where: { id } });
+  return await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, status: true, classLevel: true,},
+  });
 };
 
-// 🔹 Fonction pour récupérer tous les utilisateurs
+// 🔹 Récupérer tous les utilisateurs
 export const getAllUsers = async () => {
   return await prisma.user.findMany({
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      role: true,
-      status: true,
-      profilePicture: true,
-      createdAt: true,
-    },
+    select: { id: true, firstName: true, lastName: true, email: true, role: true, status: true, classLevel: true, createdAt: true },
   });
 };
 
-// 🔹 Fonction pour mettre à jour un utilisateur
-export const updateUser = async (id, updateData) => {
-  return await prisma.user.update({
-    where: { id },
-    data: updateData,
-  });
+// 🔹 Modifier un utilisateur
+export const updateUser = async (id, updateData, requestingUserRole) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+
+  if (!user) {
+    throw new Error("Utilisateur introuvable.");
+  }
+
+  // ✅ Protection du SUPER_ADMIN
+  if (user.role === "SUPER_ADMIN" && requestingUserRole !== "SUPER_ADMIN") {
+    throw new Error("Modification du SUPER_ADMIN interdite.");
+  }
+
+  return await prisma.user.update({ where: { id }, data: updateData });
 };
 
-// 🔹 Fonction pour changer le rôle d'un utilisateur
-export const updateUserRole = async (id, newRole, requestingUserRole) => {
+// 🔹 Supprimer un utilisateur par ID
+export const deleteUserById = async (id, requestingUserRole) => {
   const user = await prisma.user.findUnique({ where: { id } });
 
   if (!user) throw new Error("Utilisateur introuvable.");
-  if (user.role === "SUPER_ADMIN") throw new Error("Modification du rôle du SUPER_ADMIN interdite.");
+  if (user.role === "SUPER_ADMIN") throw new Error("Suppression du SUPER_ADMIN interdite.");
 
-  if (requestingUserRole !== "SUPER_ADMIN" && newRole === "SUPER_ADMIN") {
-    throw new Error("Seul le SUPER_ADMIN peut attribuer ce rôle.");
+  return await prisma.user.delete({ where: { id } });
+};
+
+// 🔹 Désactiver un utilisateur
+export const disableUser = async (id, requestingUserRole) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+
+  if (!user) {
+    throw new Error("Utilisateur introuvable.");
+  }
+
+  // ✅ Empêcher la désactivation d’un SUPER_ADMIN
+  if (user.role === "SUPER_ADMIN") {
+    throw new Error("Impossible de désactiver un SUPER_ADMIN.");
   }
 
   return await prisma.user.update({
     where: { id },
-    data: { role: newRole },
+    data: { status: "DESACTIVE" },
   });
 };
 
-// 🔹 Fonction pour changer le statut d'un utilisateur (ACTIF, SUSPENDU, DESACTIVE)
-export const updateUserStatus = async (id, newStatus, requestingUserRole) => {
-  const user = await prisma.user.findUnique({ where: { id } });
-
-  if (!user) throw new Error("Utilisateur introuvable.");
-  if (user.role === "SUPER_ADMIN") throw new Error("Modification du statut du SUPER_ADMIN interdite.");
-
-  return await prisma.user.update({
-    where: { id },
-    data: { status: newStatus },
-  });
-};
-
-// 🔹 Fonction pour générer un token de réinitialisation de mot de passe
+// 🔹 Générer un token de réinitialisation de mot de passe
 export async function generatePasswordResetToken(userId) {
   try {
-    // ✅ Vérifie s'il existe déjà un token pour cet utilisateur
-    const existingToken = await prisma.passwordResetToken.findUnique({
-      where: { userId },
-    });
+    const existingToken = await prisma.passwordResetToken.findUnique({ where: { userId } });
 
     if (existingToken) {
-      // ✅ Si un token existe déjà, le supprime
-      await prisma.passwordResetToken.delete({
-        where: { userId },
-      });
+      await prisma.passwordResetToken.delete({ where: { userId } });
     }
 
-    // ✅ Crée un nouveau token
     const token = uuidv4();
     await prisma.passwordResetToken.create({
       data: {
@@ -118,37 +122,6 @@ export async function generatePasswordResetToken(userId) {
 
     return token;
   } catch (error) {
-    console.error("❌ Erreur lors de la génération du token :", error);
     throw new Error("Impossible de générer le token de réinitialisation.");
   }
 }
-
-// 🔹 Fonction pour supprimer un utilisateur par email (sécurisé)
-export const deleteUserByEmail = async (email, requestingUserRole) => {
-  const user = await prisma.user.findUnique({ where: { email } });
-
-  if (!user) throw new Error("Utilisateur introuvable.");
-  if (user.role === "SUPER_ADMIN") throw new Error("Suppression du SUPER_ADMIN interdite.");
-  if (requestingUserRole !== "SUPER_ADMIN" && user.role === "ADMIN") {
-    throw new Error("Un ADMIN ne peut pas supprimer un autre ADMIN.");
-  }
-
-  return await prisma.user.delete({
-    where: { email },
-  });
-};
-
-// 🔹 Fonction pour supprimer un utilisateur par ID (sécurisé)
-export const deleteUserById = async (id, requestingUserRole) => {
-  const user = await prisma.user.findUnique({ where: { id } });
-
-  if (!user) throw new Error("Utilisateur introuvable.");
-  if (user.role === "SUPER_ADMIN") throw new Error("Suppression du SUPER_ADMIN interdite.");
-  if (requestingUserRole !== "SUPER_ADMIN" && user.role === "ADMIN") {
-    throw new Error("Un ADMIN ne peut pas supprimer un autre ADMIN.");
-  }
-
-  return await prisma.user.delete({
-    where: { id },
-  });
-};

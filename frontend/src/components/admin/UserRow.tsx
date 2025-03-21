@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAtom } from "jotai";
-import { User } from "../../types/users";
 import { Pencil, Trash, Check, X, Mail } from "lucide-react";
-import { editUserAtom, deleteUserAtom, resetPasswordAtom } from "../../store/usersStore";
+import { editUserAtom, deleteUserAtom, resetPasswordAtom, classLevelsAtom, fetchClassesAtom } from "../../store/usersStore";
 
 interface UserRowProps {
-  user: User;
+  user: { id: string; firstName: string; lastName: string; email: string; role: string; status: string; classLevel?: string | null };
   activeTab: "EMPLOYES" | "ELEVES";
 }
 
@@ -13,16 +12,23 @@ export default function UserRow({ user, activeTab }: UserRowProps) {
   const [, editUser] = useAtom(editUserAtom);
   const [, deleteUser] = useAtom(deleteUserAtom);
   const [, resetPassword] = useAtom(resetPasswordAtom);
+  const [classLevels] = useAtom(classLevelsAtom);
+  const [, fetchClasses] = useAtom(fetchClassesAtom);
 
-  // ✅ État pour activer/désactiver l'édition sur toute la ligne
   const [isEditing, setIsEditing] = useState(false);
 
-  // ✅ Stockage des valeurs éditées
+  // ✅ Stocker les valeurs éditées
   const [editedUser, setEditedUser] = useState({
     role: user.role,
     status: user.status,
     classLevel: user.classLevel || "",
   });
+
+  // ✅ Charger les classes au montage du composant
+  useEffect(() => {
+    fetchClasses().then(() => {
+    });
+  }, [fetchClasses]);  
 
   // ✅ Annuler l'édition (remet les valeurs initiales)
   const handleCancel = () => {
@@ -37,6 +43,7 @@ export default function UserRow({ user, activeTab }: UserRowProps) {
   // ✅ Sauvegarder les modifications
   const handleSave = async () => {
     try {
+      console.log("🔍 Données envoyées pour modification :", editedUser);
       await editUser({
         id: user.id,
         role: activeTab === "EMPLOYES" ? editedUser.role : undefined,
@@ -62,7 +69,7 @@ export default function UserRow({ user, activeTab }: UserRowProps) {
           {isEditing ? (
             <select
               value={editedUser.role}
-              onChange={(e) => setEditedUser({ ...editedUser, role: e.target.value as User["role"] })}
+              onChange={(e) => setEditedUser({ ...editedUser, role: e.target.value })}
               className="border rounded px-2 py-1"
             >
               <option value="RESPONSABLE_PEDAGOGIQUE">Responsable pédagogique</option>
@@ -79,12 +86,18 @@ export default function UserRow({ user, activeTab }: UserRowProps) {
       {activeTab === "ELEVES" && (
         <td className="border p-3">
           {isEditing ? (
-            <input
-              type="text"
+            <select
               value={editedUser.classLevel}
               onChange={(e) => setEditedUser({ ...editedUser, classLevel: e.target.value })}
               className="border rounded px-2 py-1 w-full"
-            />
+            >
+              <option value="">Sélectionner une classe</option>
+              {classLevels.map((classe) => (
+                <option key={classe} value={classe}>
+                  {classe}
+                </option>
+              ))}
+            </select>
           ) : (
             <span>{user.classLevel || "—"}</span>
           )}
@@ -96,7 +109,7 @@ export default function UserRow({ user, activeTab }: UserRowProps) {
         {isEditing ? (
           <select
             value={editedUser.status}
-            onChange={(e) => setEditedUser({ ...editedUser, status: e.target.value as User["status"] })}
+            onChange={(e) => setEditedUser({ ...editedUser, status: e.target.value })}
             className="border rounded px-2 py-1"
           >
             <option value="ACTIF">Actif</option>
@@ -104,7 +117,7 @@ export default function UserRow({ user, activeTab }: UserRowProps) {
             <option value="DESACTIVE">Désactivé</option>
           </select>
         ) : (
-          <span>{user.status}</span>
+          <span>{user.status || "Actif"}</span>
         )}
       </td>
 

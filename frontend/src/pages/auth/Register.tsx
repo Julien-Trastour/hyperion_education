@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { useAtom } from "jotai";
+import { register } from "../../services/authService";
+import { authAtom } from "../../store/authAtom";
 
 export default function Register() {
+  const [, setAuth] = useAtom(authAtom);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -12,11 +16,10 @@ export default function Register() {
     password: "",
   });
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Gestion des changements dans les champs (sauf date)
+  // Gestion des changements de champ
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -27,32 +30,26 @@ export default function Register() {
     setFormData({ ...formData, birthDate: formattedDate });
   };
 
-  // Envoi du formulaire
+  // ✅ Gestion de l'inscription via `authService.ts`
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setMessage(null);
     setIsLoading(true);
 
     try {
-      const formattedDate = new Date(formData.birthDate).toISOString().split("T")[0];
+      const data = await register({ ...formData, role: "ELEVE" });
 
-      const response = await fetch("http://localhost:5000/api/auth/register", { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, birthDate: formattedDate, role: "ELEVE" }),
-      });      
+      // ✅ Mise à jour de l'état global avec Jotai
+      setAuth({ token: data.token, role: data.user.role, user: data.user });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Inscription échouée.");
-      }
-
-      setMessage("Compte créé avec succès ! Redirection...");
-      setTimeout(() => navigate("/login"), 3000);
+      // 🔀 Redirection automatique selon le rôle utilisateur
+      navigate(
+        ["SUPER_ADMIN", "ADMIN", "RESPONSABLE_PEDAGOGIQUE"].includes(data.user.role)
+          ? "/admin"
+          : "/eleve"
+      );
     } catch (err) {
-      setError((err as Error).message);
+      setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
     } finally {
       setIsLoading(false);
     }
@@ -64,9 +61,7 @@ export default function Register() {
         <h1 className="text-center text-3xl font-bold text-gray-800">Inscription ✨</h1>
         <p className="mt-2 text-center text-gray-600">Rejoins-nous dès maintenant !</p>
 
-        {/* Affichage des erreurs et messages */}
         {error && <p className="mt-2 text-center text-red-600">{error}</p>}
-        {message && <p className="mt-2 text-center text-green-600">{message}</p>}
 
         <form onSubmit={handleRegister} className="mt-6 space-y-6">
           <div>
@@ -116,7 +111,7 @@ export default function Register() {
             />
           </div>
 
-          <div className="pb-6">
+          <div>
             <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
             <div className="relative">
               <input
@@ -153,12 +148,9 @@ export default function Register() {
           </button>
         </form>
 
-        {/* Lien vers la connexion */}
         <p className="mt-4 text-center text-sm text-gray-600">
           Déjà un compte ?{" "}
-          <a href="/login" className="text-green-500 hover:underline">
-            Connecte-toi ici
-          </a>
+          <a href="/login" className="text-green-500 hover:underline">Connecte-toi ici</a>
         </p>
       </div>
     </div>

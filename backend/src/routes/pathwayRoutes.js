@@ -1,44 +1,90 @@
 import express from "express";
-import {
-  getPathways,
-  getPathway,
-  getPathwaysByThemeId,
-  getLessonsFromPathway,
-  createNewPathway,
-  editPathway,
-  removePathway,
-  getPathwayWithRelationsController
-} from "../controllers/pathwayController.js";
 import { authenticateToken, isAdmin } from "../middlewares/authMiddleware.js";
+import {
+  getClasses,
+  getCycles,
+  getClassesByCycle,
+  getSubjectsByClass,
+  createSubjectController,
+  updateSubjectController,
+  deleteSubjectController,
+  getCategoriesBySubject,
+  createCategoryController,
+  updateCategoryController,
+  deleteCategoryController,
+  getThemesByCategory,
+  createThemeController,
+  updateThemeController,
+  deleteThemeController,
+  getPathwayContentController,
+  updatePathwayContentController,
+  getAllPathwaysController
+} from "../controllers/pathwayController.js";
 
 const router = express.Router();
 
-/* ==========================
-   🔹 Routes pour la gestion des parcours
-   ========================== */
+/* ========================= CYCLES & CLASSES ========================= */
 
-// 🔹 Récupérer tous les parcours (accessible aux admins uniquement)
-router.get("/", authenticateToken, isAdmin, getPathways);
+// 🔹 Récupérer la liste des cycles
+router.get("/cycles", authenticateToken, isAdmin, getCycles);
 
-// 🔹 Récupérer un parcours par ID (accessible aux admins uniquement)
-router.get("/:id", authenticateToken, isAdmin, getPathway);
+// 🔹 Récupérer les classes d’un cycle spécifique
+router.get("/classes/:cycleId", authenticateToken, isAdmin, getClassesByCycle);
 
-// 🔹 Récupérer tous les parcours d'un thème donné (accessible aux admins uniquement)
-router.get("/theme/:themeId", authenticateToken, isAdmin, getPathwaysByThemeId);
+// 🔹 Récupérer toutes les classes disponibles (utilisé pour les utilisateurs)
+router.get("/classes", authenticateToken, getClasses);
 
-// 🔹 Récupérer les leçons d’un parcours (accessible aux admins uniquement)
-router.get("/:id/lessons", authenticateToken, isAdmin, getLessonsFromPathway);
+/* ========================= SUBJECTS ========================= */
 
-// 🔹 Créer un nouveau parcours (accessible aux admins uniquement)
-router.post("/", authenticateToken, isAdmin, createNewPathway);
+// 🔹 Récupérer les matières d’une classe
+router.get("/subjects/:classId", authenticateToken, isAdmin, getSubjectsByClass);
 
-// 🔹 Modifier un parcours existant (accessible aux admins uniquement)
-router.put("/:id", authenticateToken, isAdmin, editPathway);
+// 🔸 Ajouter une matière
+router.post("/subjects", authenticateToken, isAdmin, createSubjectController);
 
-// 🔹 Supprimer un parcours (accessible aux admins uniquement)
-router.delete("/:id", authenticateToken, isAdmin, removePathway);
+// 🔸 Modifier une matière
+router.put("/subjects/:subjectId", authenticateToken, isAdmin, updateSubjectController);
 
-// 🔹 Route pour récupérer un parcours avec toutes ses relations
-router.get("/:id/full", getPathwayWithRelationsController);
+// 🔸 Supprimer une matière
+router.delete("/subjects/:subjectId", authenticateToken, isAdmin, deleteSubjectController);
+
+/* ========================= CATEGORIES ========================= */
+
+// 🔹 Récupérer les catégories d’une matière
+router.get("/categories/:subjectId", authenticateToken, isAdmin, getCategoriesBySubject);
+
+// 🔸 Ajouter une catégorie
+router.post("/categories", authenticateToken, isAdmin, createCategoryController);
+
+// 🔸 Modifier une catégorie
+router.put("/categories/:categoryId", authenticateToken, isAdmin, updateCategoryController);
+
+// 🔸 Supprimer une catégorie
+router.delete("/categories/:categoryId", authenticateToken, isAdmin, deleteCategoryController);
+
+/* ========================= THEMES ========================= */
+
+// 🔹 Récupérer les thèmes d’une catégorie
+router.get("/themes/:categoryId", authenticateToken, isAdmin, getThemesByCategory);
+
+// 🔸 Ajouter un thème
+router.post("/themes", authenticateToken, isAdmin, createThemeController);
+
+// 🔸 Modifier un thème
+router.put("/themes/:themeId", authenticateToken, isAdmin, updateThemeController);
+
+// 🔸 Supprimer un thème
+router.delete("/themes/:themeId", authenticateToken, isAdmin, deleteThemeController);
+
+/* ========================= PATHWAY CONTENT ========================= */
+
+// 🔸 Récupérer tout le contenu d’un parcours (thèmes, leçons, exercices, etc.)
+router.get("/:pathwayId/content", authenticateToken, isAdmin, getPathwayContentController);
+
+// 🔸 Modifier le contenu d’un parcours
+router.put("/:pathwayId/content", authenticateToken, isAdmin, updatePathwayContentController);
+
+// 🔹 Récupérer tous les parcours avec leçons et exercices
+router.get("/", authenticateToken, isAdmin, getAllPathwaysController);
 
 export default router;

@@ -1,10 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ResetPassword from "./pages/auth/ResetPassword";
 import ResetPasswordForm from "./pages/auth/ResetPasswordForm";
 import AdminRoutes from "./routes/AdminRoutes";
-import DashboardStudentLayout from "./layouts/DashboardStudentLayout";
+import StudentRoutes from "./routes/StudentRoutes";
 
 function App() {
   return (
@@ -16,11 +16,11 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/reset-password/confirm" element={<ResetPasswordForm />} />
 
-        {/* Dashboard Admin */}
+        {/* Admin Dashboard */}
         <Route path="/admin/*" element={<AdminRoutes />} />
 
-        {/* Dashboard Élève */}
-        <Route path="/eleve/*" element={<DashboardStudentLayout />} />
+        {/* Student Dashboard */}
+        <Route path="/student/*" element={<StudentRoutes />} />
       </Routes>
     </Router>
   );
